@@ -7,15 +7,13 @@ app.use(function (req, res, next) {
 	res.set('Cache-control', 'max-age=0,no-cache')
 	next();
 });
+app.get
 app.get('/polyfill-demo', function (req, res) {
-	res.set('x-server-push', '/main.css,/main.js')
-	res.send(`<!DOCTYPE html>
-		<html>
-			<head>
-				<link href="/main.css" rel="stylesheet" />
-			</head>
-			<body>
-			<article class="markdown-body entry-content" itemprop="mainContentOfPage"><h1><a id="user-content-proof-of-concept-for-using-service-worker-to-polyfill-server-push" class="anchor" href="#proof-of-concept-for-using-service-worker-to-polyfill-server-push" aria-hidden="true"><span class="octicon octicon-link"></span></a>Proof of concept for using service worker to polyfill server push</h1>
+	const minute = Math.floor(Date.now()/20000);
+	let html = '';
+
+	const article = `
+		<article class="markdown-body entry-content" itemprop="mainContentOfPage"><h1><a id="user-content-proof-of-concept-for-using-service-worker-to-polyfill-server-push" class="anchor" href="#proof-of-concept-for-using-service-worker-to-polyfill-server-push" aria-hidden="true"><span class="octicon octicon-link"></span></a>Proof of concept for using service worker to polyfill server push</h1>
 
 <h2><a id="user-content-how-it-works" class="anchor" href="#how-it-works" aria-hidden="true"><span class="octicon octicon-link"></span></a>How it works</h2>
 
@@ -28,18 +26,19 @@ app.get('/polyfill-demo', function (req, res) {
 <h3><a id="user-content-with" class="anchor" href="#with" aria-hidden="true"><span class="octicon octicon-link"></span></a>With</h3>
 
 <p>Note the very fast response for the js. The effect on css is negligeable, though this test page has an unrealistically tiny <code>&lt;head&gt;</code>, so in the real world there could be a small but very real improvement
-<a href="https://cloud.githubusercontent.com/assets/447559/11320679/89d6057a-9099-11e5-9c4b-0feae958997b.png" target="_blank"><img src="https://cloud.githubusercontent.com/assets/447559/11320679/89d6057a-9099-11e5-9c4b-0feae958997b.png" alt="with" style="max-width:100%;"></a></p>
 
 <h3><a id="user-content-without" class="anchor" href="#without" aria-hidden="true"><span class="octicon octicon-link"></span></a>Without</h3>
 
-<p><a href="https://cloud.githubusercontent.com/assets/447559/11320678/89d4ed34-9099-11e5-9b4e-b9b392bc45c4.png" target="_blank"><img src="https://cloud.githubusercontent.com/assets/447559/11320678/89d4ed34-9099-11e5-9b4e-b9b392bc45c4.png" alt="without" style="max-width:100%;"></a></p>
 
 <h2><a id="user-content-limitations" class="anchor" href="#limitations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Limitations</h2>
 
 <ul>
-<li>Still have to wait for the round trip for html to send its headers before the 'push'es can begin</li>
-<li>The responsive picture element makes pushing images somewhat redundant (although the same is true of real server push)</li>
-<li>Possibly a bad idea unless your site is already on http2 - kicking off an extra early http request for js could delay the loading of other resources, eg. images, fonts</li>
+<li>Still have to wait for the round trip for html to send its headers before the 'push'es can begin.
+The most time you'll save is the time it takes to download (inbound journey online) and parse your html page,
+but even on high performance websites this will be a saving of ~100ms... and if you're on a high
+performance website you'll already know ~100ms is a respectable dent</li>
+<li>Possibly a bad idea to do this for too many requests unless your site is already on http2 -
+kicking off an extra early http request for js could delay the loading of other resources, eg. images, fonts</li>
 </ul>
 
 <h2><a id="user-content-todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO</h2>
@@ -48,7 +47,21 @@ app.get('/polyfill-demo', function (req, res) {
 <li>interacting properly with cache - the 'push' should store in cache and the real requests from the page should check cache before checking the inFlight object</li>
 </ul>
 </article>
-<script src="/main.js"></script>
+`;
+let i = 0;
+while (i++ < 20) {
+	html+= article;
+}
+
+	res.set('x-server-push', `/main.css?hash=${minute},/main.js?hash=${minute}`)
+	res.send(`<!DOCTYPE html>
+		<html>
+			<head>
+				<link href="/main.css?hash=${minute}" rel="stylesheet" />
+			</head>
+			<body>
+		${html}
+<script src="/main.js?hash=${minute}"></script>
 			</body>
 		</html>
 	`)
@@ -57,3 +70,7 @@ app.get('/polyfill-demo', function (req, res) {
 app.listen(process.env.PORT || 3000, function () {
 	console.log('listening on 3000');
 });
+
+
+// <a href="https://cloud.githubusercontent.com/assets/447559/11320679/89d6057a-9099-11e5-9c4b-0feae958997b.png" target="_blank"><img src="https://cloud.githubusercontent.com/assets/447559/11320679/89d6057a-9099-11e5-9c4b-0feae958997b.png" alt="with" style="max-width:100%;"></a></p>
+// <p><a href="https://cloud.githubusercontent.com/assets/447559/11320678/89d4ed34-9099-11e5-9b4e-b9b392bc45c4.png" target="_blank"><img src="https://cloud.githubusercontent.com/assets/447559/11320678/89d4ed34-9099-11e5-9b4e-b9b392bc45c4.png" alt="without" style="max-width:100%;"></a></p>
