@@ -4,15 +4,15 @@
 
 ## The problem being solved
 
-Service worker caching is great, but for a site with a release cycle that's more rapid than the frequency of most users' visits (such as [the one](https://next.ft.com) I spend most of my time working on at the moment), more often than not the cache won't be populated with the javacript file the page is requesting. Server push would solve this problem but isn't readily available yet, not even at the server level, let alone in the CDN. 
+Service worker caching is great, but for a site with a release cycle that's more rapid than the frequency of most users' visits (such as [the one](https://next.ft.com) I spend most of my time working on at the moment), more often than not the cache won't contain the javacript file the page is requesting. Server push would solve this problem but isn't readily available yet, not even at the server level, let alone in the CDN. 
 
 So what follows is an attempt to be a little cleverer with how service-worker intercepts requests in order to emulate server push.
 
 ## How it works
 
-The server sets an `x-server-push` header on the main html response which lists any files which should be 'pushed' by the server. On fetch the service worker checks for this header and fires off a response for each path specified, storing the requests in memory. As soon as they respond they are added to the service worker cache and the references to the requests in memory are deleted.
+The server sets an `x-server-push` header on the main html response which lists any files which should be 'pushed' by the server. On fetch the service worker checks for this header and fires off a request for each path specified, storing the requests in memory. As soon as they respond they are added to the service worker cache and the inmemory references are deleted.
 
-When the browser then attempts to fetch these resources they are intercepted by the service worker, which responds with the cached response, if it exists, the in-flight request, if that exists, or failing both kicks off a fresh request.
+When the browser then attempts to fetch these resources they are intercepted by the service worker, which responds with the cached response, or the in-flight request, or a fresh request (in that order of preference)
 
 ## Impact
 
