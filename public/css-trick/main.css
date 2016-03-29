@@ -1,0 +1,7 @@
+body {
+	background: blue;
+}
+
+body:before {
+  content: 'default style';
+}
